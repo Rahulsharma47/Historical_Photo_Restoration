@@ -1,0 +1,38 @@
+FROM python:3.10.12-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PIP_DEFAULT_TIMEOUT=100
+
+RUN apt-get update && apt-get install -y \
+    git \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install PyTorch versions you specified
+RUN pip3 install --no-cache-dir --timeout=100 torch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0
+
+# Install other dependencies
+RUN pip3 install --no-cache-dir --timeout=100 opencv-python Pillow
+
+# Install packages one by one to avoid timeout issues
+RUN pip3 install --no-cache-dir --timeout=100 basicsr==1.4.2
+RUN pip3 install --no-cache-dir --timeout=100 facexlib==0.3.0
+RUN pip3 install --no-cache-dir --timeout=100 realesrgan==0.3.0
+RUN pip3 install --no-cache-dir --timeout=100 gfpgan==1.3.8
+
+# Force install NumPy 1.x after everything else
+RUN pip3 install --no-cache-dir --timeout=100 --force-reinstall numpy==1.26.4
+
+VOLUME /app/inputs
+VOLUME /app/outputs
+VOLUME /app/models
+
+CMD ["bash"]

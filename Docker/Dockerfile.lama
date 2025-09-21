@@ -1,0 +1,64 @@
+FROM python:3.9-slim 
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PIP_DEFAULT_TIMEOUT=100
+
+RUN apt-get update && apt-get install -y \
+    git \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install NumPy 1.x first to ensure compatibility
+RUN pip install --no-cache-dir --timeout=100 numpy==1.24.4
+
+# Install specific PyTorch + Lightning versions compatible with LaMa
+RUN pip install --no-cache-dir --timeout=100 \
+    torch==1.8.1 \
+    torchvision==0.9.1
+
+# Install LaMa-specific requirements
+RUN pip install --no-cache-dir --timeout=100 \
+    pytorch-lightning==1.2.9 \
+    albumentations==0.5.2 \
+    kornia==0.5.0 \
+    hydra-core==1.1.0 \
+    easydict==1.9 \
+    joblib \
+    matplotlib \
+    pandas \
+    tabulate \
+    packaging \
+    tqdm \
+    webdataset \
+    wldhx.yadisk-direct \
+    pyyaml
+
+# Install compatible OpenCV version that works with NumPy 1.x
+RUN pip install --no-cache-dir --timeout=100 opencv-python==4.5.5.64
+
+# Install Pillow for image operations
+RUN pip install --no-cache-dir --timeout=100 Pillow
+
+# Install LaMa package dependencies (code will be mounted from host)
+RUN pip install --no-cache-dir --timeout=100 \
+    omegaconf \
+    einops
+
+RUN pip install --no-cache-dir --timeout=100 \
+    "scikit-image>=0.17,<0.20" \
+    "scikit-learn>=0.24,<1.2"
+
+# Final NumPy reinstall to ensure compatibility
+RUN pip install --no-cache-dir --timeout=100 --force-reinstall numpy==1.24.4
+
+VOLUME /app/inputs
+VOLUME /app/outputs
+VOLUME /app/models
+
+CMD ["bash"]

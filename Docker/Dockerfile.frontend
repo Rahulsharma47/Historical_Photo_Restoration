@@ -1,0 +1,24 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install Docker CLI
+RUN apt-get update && apt-get install -y \
+    curl \
+    && curl -fsSL https://get.docker.com -o get-docker.sh \
+    && sh get-docker.sh \
+    && rm get-docker.sh \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python packages
+RUN pip install --no-cache-dir --timeout 300 flask pillow
+
+COPY frontend/frontend_app.py .
+COPY frontend/process_realesrgan_only.py .
+COPY frontend/process_gfpgan_only.py .
+COPY frontend/docker_processing_script.py .
+
+EXPOSE 5000
+
+CMD ["python", "frontend_app.py"]

@@ -1,0 +1,5 @@
+model_repo/
+models/
+gfpgan/weights/
+*.pth
+*.pt

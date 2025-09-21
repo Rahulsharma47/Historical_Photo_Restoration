@@ -1,0 +1,44 @@
+services:
+  # lama:
+  #   build:
+  #     dockerfile: Docker/Dockerfile.lama
+  #   container_name: lama-container
+  #   volumes:
+  #     - ./inputs:/app/inputs
+  #     - ./outputs:/app/outputs
+  #     - ./models:/app/models
+  #     - ./model_repo/lama:/app/lama-repo  # This is correct!
+  #     - ./:/app
+  #   environment:
+  #     - PYTHONPATH=/app/lama-repo
+  #   stdin_open: true
+  #   tty: true
+
+  realesrgan-gfpgan:
+    build:
+      dockerfile: Docker/Dockerfile.real-ESRGAN
+    container_name: esrgan-container
+    volumes:
+      - ./inputs:/app/inputs
+      - ./outputs:/app/outputs
+      - ./models:/app/models
+      - ./:/app  # Mount entire project directory
+    stdin_open: true
+    tty: true
+
+  frontend:
+    build:
+      dockerfile: Docker/Dockerfile.frontend
+    container_name: frontend-container
+    ports:
+      - "5001:5000"  # Changed from 8501 to 5000
+    volumes:
+      - ./inputs:/app/inputs
+      - ./outputs:/app/outputs
+      #- ./:/app
+      - /var/run/docker.sock:/var/run/docker.sock  # Add this line
+    depends_on:
+      # - lama
+      - realesrgan-gfpgan
+    stdin_open: true
+    tty: true
