@@ -60,7 +60,7 @@ def process_image_realesrgan_only(input_filename, output_filename):
         esrgan_output_bgr = cv2.cvtColor(esrgan_output, cv2.COLOR_RGB2BGR)
         
         # Save result
-        cv2.imwrite(f'/app/outputs/{output_filename}', esrgan_output_bgr)
+        cv2.imwrite(f'/app/outputs/frontend/{output_filename}', esrgan_output_bgr)
         print(f"Real-ESRGAN processing complete - saved as {output_filename}")
         
     except Exception as e:
@@ -69,7 +69,7 @@ def process_image_realesrgan_only(input_filename, output_filename):
         img = Image.open(f'/app/inputs/{input_filename}').convert('RGB')
         width, height = img.size
         img_resized = img.resize((width * 4, height * 4), Image.LANCZOS)
-        img_resized.save(f'/app/outputs/{output_filename}')
+        img_resized.save(f'/app/outputs/frontend/{output_filename}')
         print(f"Fallback processing complete - saved as {output_filename}")
 
 if __name__ == "__main__":

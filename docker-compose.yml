@@ -16,18 +16,24 @@ services:
 
   realesrgan-gfpgan:
     build:
+      context: .
       dockerfile: Docker/Dockerfile.real-ESRGAN
     container_name: esrgan-container
     volumes:
       - ./inputs:/app/inputs
       - ./outputs:/app/outputs
       - ./models:/app/models
-      - ./:/app  # Mount entire project directory
+      - ./frontend:/app/frontend
+    working_dir: /app
+    # THIS IS THE IMPORTANT PART - Make sure watcher starts
+    command: python /app/frontend/docker_processing_script.py
     stdin_open: true
     tty: true
+    restart: unless-stopped  # Auto-restart if it crashes
 
   frontend:
     build:
+      context: .
       dockerfile: Docker/Dockerfile.frontend
     container_name: frontend-container
     ports:
@@ -35,6 +41,7 @@ services:
     volumes:
       - ./inputs:/app/inputs
       - ./outputs:/app/outputs
+      - ./frontend:/app
       #- ./:/app
       - /var/run/docker.sock:/var/run/docker.sock  # Add this line
     depends_on:

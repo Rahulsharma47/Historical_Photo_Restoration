@@ -1,0 +1,10 @@
+to start docker: docker-compose up -d realesrgan-gfpgan
+
+to start RealESRGan: docker run --rm -v "$(pwd)":/app/frontend realesrgan-gfpgan python /app/frontend/process_realesrgan_only.py b.png esr_1.jpg
+
+to start GFPGan: docker run --rm -v "$(pwd)":/app/frontend realesrgan-gfpgan python /app/frontend/process_gfpgan_only.py esr_1.png final.png
+
+
+to start frontend: docker-compose up --build
+
+server: http://localhost:5001

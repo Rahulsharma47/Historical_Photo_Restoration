@@ -22,15 +22,17 @@ def watch_and_process():
                     
                     # Run Real-ESRGAN processing
                     result = subprocess.run([
-                        'python', '/app/process_realesrgan_only.py', 
+                        'python', '/app/frontend/process_realesrgan_only.py', 
                         input_filename, 
                         output_filename
                     ], capture_output=True, text=True, timeout=600)
                     
                     if result.returncode == 0:
                         print(f"Real-ESRGAN processing successful: {output_filename}")
+                        print(f"STDOUT:\n{result.stdout}")
                     else:
                         print(f"Real-ESRGAN processing failed: {result.stderr}")
+                        print(f"STDOUT:\n{result.stdout}")
                     
                     # Remove the process file to signal completion
                     os.remove(process_file)
@@ -45,7 +47,7 @@ def watch_and_process():
                         pass
 
             # Check for GFPGAN processing requests
-            gfpgan_files = glob.glob('/app/outputs/*.process_gfpgan')
+            gfpgan_files = glob.glob('/app/outputs/GFPGAN/*.process_gfpgan')
             for process_file in gfpgan_files:
                 try:
                     # Extract filename
@@ -63,7 +65,7 @@ def watch_and_process():
                     
                     # Run GFPGAN processing
                     result = subprocess.run([
-                        'python', '/app/process_gfpgan_only.py', 
+                        'python', '/app/frontend/process_gfpgan_only.py', 
                         input_filename, 
                         output_filename
                     ], capture_output=True, text=True, timeout=300)
