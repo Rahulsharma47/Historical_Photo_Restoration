@@ -1,4 +1,5 @@
 import sys
+import os
 import torch
 import numpy as np
 import cv2
@@ -30,10 +31,13 @@ def process_image_gfpgan_only(input_filename, output_filename):
             bg_upsampler=None  # We already enhanced with Real-ESRGAN
         )
 
-        # Load the Real-ESRGAN enhanced image
-        img = cv2.imread(f'/app/outputs/{input_filename}')
+        # Load the Real-ESRGAN enhanced image - FIXED PATH
+        input_path = f'/app/outputs/frontend/{input_filename}'
+        print(f"Loading image from: {input_path}")
+        
+        img = cv2.imread(input_path)
         if img is None:
-            raise Exception(f"Could not load image: {input_filename}")
+            raise Exception(f"Could not load image from: {input_path}")
         
         print(f"Input image shape: {img.shape}")
         
@@ -48,16 +52,26 @@ def process_image_gfpgan_only(input_filename, output_filename):
         print("GFPGAN processing complete")
         print(f"Final output shape: {final_output.shape}")
 
-        # Save final result
-        cv2.imwrite(f'/app/outputs/{output_filename}', final_output)
-        print(f"GFPGAN processing complete - saved as {output_filename}")
+        # Save final result - FIXED PATH
+        output_path = f'/app/outputs/frontend/{output_filename}'
+        cv2.imwrite(output_path, final_output)
+        print(f"GFPGAN processing complete - saved as {output_path}")
         
     except Exception as e:
         print(f"Error during GFPGAN processing: {e}")
+        import traceback
+        traceback.print_exc()
+        
         # Fallback: just copy the input file if GFPGAN fails
         import shutil
-        shutil.copy(f'/app/outputs/{input_filename}', f'/app/outputs/{output_filename}')
-        print(f"Fallback: copied {input_filename} as {output_filename}")
+        input_path = f'/app/outputs/frontend/{input_filename}'
+        output_path = f'/app/outputs/frontend/{output_filename}'
+        
+        if os.path.exists(input_path):
+            shutil.copy(input_path, output_path)
+            print(f"Fallback: copied {input_filename} as {output_filename}")
+        else:
+            print(f"Error: Input file not found at {input_path}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
@@ -66,4 +80,10 @@ if __name__ == "__main__":
     
     input_file = sys.argv[1]
     output_file = sys.argv[2]
+    
+    import os
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Input file: {input_file}")
+    print(f"Output file: {output_file}")
+    
     process_image_gfpgan_only(input_file, output_file)

@@ -49,35 +49,59 @@ def process_with_realesrgan_only(input_filename):
 def process_with_gfpgan(input_filename):
     """Process already Real-ESRGAN enhanced image with GFPGAN"""
     try:
+        # Verify input file exists first
+        input_path = os.path.join(OUTPUT_FOLDER, input_filename)
+        if not os.path.exists(input_path):
+            print(f"[GFPGAN] ERROR: Input file does not exist: {input_path}")
+            print(f"[GFPGAN] Files in output folder:")
+            for f in os.listdir(OUTPUT_FOLDER):
+                print(f"  - {f}")
+            return None
+        
         # Create a .process_gfpgan file to signal GFPGAN processing
         process_file = os.path.join(OUTPUT_FOLDER, f"{input_filename}.process_gfpgan")
         with open(process_file, 'w') as f:
             f.write("process_gfpgan")
+        
+        print(f"[GFPGAN] Created process file: {process_file}")
         
         # Output will be the final enhanced version
         base_name = input_filename.replace("esrgan_", "")
         output_filename = f"final_enhanced_{base_name}"
         output_path = os.path.join(OUTPUT_FOLDER, output_filename)
         
+        print(f"[GFPGAN] Waiting for output: {output_path}")
+        
         # Wait for GFPGAN processing to complete
-        max_wait = 300  # 5 minutes timeout for face enhancement
+        max_wait = 600  # 10 minutes timeout (increased from 5)
         wait_time = 0
         
         while wait_time < max_wait:
+            # Check if processing is complete
             if os.path.exists(output_path) and not os.path.exists(process_file):
-                print("GFPGAN processing completed successfully")
+                print("[GFPGAN] GFPGAN processing completed successfully")
                 return output_filename
+            
+            # Log progress every 10 seconds
+            if wait_time % 10 == 0:
+                print(f"[GFPGAN] Waiting... ({wait_time}s / {max_wait}s)")
+                print(f"[GFPGAN] Process file exists: {os.path.exists(process_file)}")
+                print(f"[GFPGAN] Output file exists: {os.path.exists(output_path)}")
+            
             time.sleep(2)
             wait_time += 2
         
-        print("GFPGAN processing timed out")
+        print("[GFPGAN] GFPGAN processing timed out")
         # Clean up process file if it still exists
         if os.path.exists(process_file):
             os.remove(process_file)
+            print("[GFPGAN] Cleaned up process file")
         return None
             
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"[GFPGAN] Error: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def allowed_file(filename):
@@ -92,7 +116,7 @@ def index():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Historical Photo Restoration</title>
-        <style>
+ <style>
             * {
                 margin: 0;
                 padding: 0;
@@ -101,9 +125,9 @@ def index():
 
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #000000 0%, #111111 100%);
                 min-height: 100vh;
-                color: #333;
+                color: #e0e0e0;
             }
 
             .container {
@@ -115,27 +139,27 @@ def index():
             .header {
                 text-align: center;
                 margin-bottom: 40px;
-                color: white;
+                color: #00aaff;
             }
 
             .header h1 {
                 font-size: 3em;
                 margin-bottom: 10px;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                text-shadow: 2px 2px 10px rgba(0,150,255,0.4);
             }
 
             .header p {
                 font-size: 1.2em;
-                opacity: 0.9;
+                opacity: 0.85;
+                color: #cccccc;
             }
 
             .main-card {
-                background: rgba(255, 255, 255, 0.95);
+                background: rgba(25, 25, 25, 0.95);
                 border-radius: 20px;
                 padding: 40px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255,255,255,0.2);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+                border: 1px solid rgba(255,255,255,0.05);
             }
 
             .upload-section {
@@ -144,10 +168,10 @@ def index():
             }
 
             .upload-area {
-                border: 3px dashed #667eea;
+                border: 3px dashed #007bff;
                 border-radius: 15px;
                 padding: 60px 40px;
-                background: linear-gradient(145deg, #f8f9ff, #e8ecff);
+                background: linear-gradient(145deg, #1a1a1a, #121212);
                 transition: all 0.3s ease;
                 cursor: pointer;
                 position: relative;
@@ -155,33 +179,33 @@ def index():
             }
 
             .upload-area:hover {
-                border-color: #764ba2;
-                background: linear-gradient(145deg, #e8ecff, #f8f9ff);
+                border-color: #00aaff;
+                background: linear-gradient(145deg, #151515, #1f1f1f);
                 transform: translateY(-2px);
-                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+                box-shadow: 0 10px 25px rgba(0,150,255,0.2);
             }
 
             .upload-area.dragover {
-                border-color: #764ba2;
-                background: linear-gradient(145deg, #e8f4ff, #f0f8ff);
+                border-color: #00aaff;
+                background: linear-gradient(145deg, #1a2a3a, #0d1a26);
             }
 
             .upload-icon {
                 font-size: 4em;
-                color: #667eea;
+                color: #00aaff;
                 margin-bottom: 20px;
                 display: block;
             }
 
             .upload-text {
                 font-size: 1.3em;
-                color: #555;
+                color: #e0e0e0;
                 margin-bottom: 15px;
                 font-weight: 600;
             }
 
             .upload-subtext {
-                color: #888;
+                color: #aaa;
                 font-size: 0.95em;
                 margin-bottom: 25px;
             }
@@ -191,7 +215,7 @@ def index():
             }
 
             .upload-btn {
-                background: linear-gradient(135deg, #667eea, #764ba2);
+                background: linear-gradient(135deg, #007bff, #00aaff);
                 color: white;
                 border: none;
                 padding: 15px 35px;
@@ -200,12 +224,12 @@ def index():
                 border-radius: 50px;
                 cursor: pointer;
                 transition: all 0.3s ease;
-                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+                box-shadow: 0 5px 15px rgba(0,150,255,0.3);
             }
 
             .upload-btn:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+                box-shadow: 0 8px 25px rgba(0,150,255,0.4);
             }
 
             .upload-btn:disabled {
@@ -224,13 +248,13 @@ def index():
                 max-width: 400px;
                 max-height: 400px;
                 border-radius: 15px;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.6);
                 margin: 20px auto;
                 display: block;
             }
 
             .process-btn {
-                background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+                background: linear-gradient(135deg, #28a745, #6dd5ed);
                 color: white;
                 border: none;
                 padding: 15px 40px;
@@ -239,24 +263,25 @@ def index():
                 border-radius: 50px;
                 cursor: pointer;
                 transition: all 0.3s ease;
-                box-shadow: 0 5px 15px rgba(86, 171, 47, 0.3);
+                box-shadow: 0 5px 15px rgba(40,167,69,0.3);
                 margin-top: 20px;
             }
 
             .process-btn:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(86, 171, 47, 0.4);
+                box-shadow: 0 8px 25px rgba(40,167,69,0.4);
             }
 
             .loading {
                 display: none;
                 text-align: center;
                 margin: 30px 0;
+                color: #e0e0e0;
             }
 
             .spinner {
-                border: 4px solid #f3f3f3;
-                border-top: 4px solid #667eea;
+                border: 4px solid #333;
+                border-top: 4px solid #00aaff;
                 border-radius: 50%;
                 width: 50px;
                 height: 50px;
@@ -272,7 +297,7 @@ def index():
             .progress-bar {
                 width: 100%;
                 height: 8px;
-                background: #e0e0e0;
+                background: #222;
                 border-radius: 4px;
                 overflow: hidden;
                 margin: 20px 0;
@@ -280,7 +305,7 @@ def index():
 
             .progress-fill {
                 height: 100%;
-                background: linear-gradient(90deg, #667eea, #764ba2);
+                background: linear-gradient(90deg, #007bff, #00aaff);
                 width: 0%;
                 transition: width 0.3s ease;
                 border-radius: 4px;
@@ -294,16 +319,18 @@ def index():
             }
 
             .feature-card {
-                background: white;
+                background: #1c1c1c;
                 padding: 25px;
                 border-radius: 15px;
                 text-align: center;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-                transition: transform 0.3s ease;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                color: #e0e0e0;
             }
 
             .feature-card:hover {
                 transform: translateY(-5px);
+                box-shadow: 0 5px 25px rgba(0,150,255,0.2);
             }
 
             .feature-icon {
@@ -313,7 +340,7 @@ def index():
             }
 
             .reset-btn {
-                background: #6c757d;
+                background: #444;
                 color: white;
                 border: none;
                 padding: 10px 20px;
@@ -324,18 +351,18 @@ def index():
             }
 
             .reset-btn:hover {
-                background: #5a6268;
+                background: #666;
                 transform: translateY(-1px);
             }
 
             .file-info {
-                background: #f8f9fa;
+                background: #1f1f1f;
                 padding: 15px;
                 border-radius: 10px;
                 margin: 15px 0;
                 text-align: left;
                 font-size: 0.9em;
-                color: #666;
+                color: #ccc;
             }
 
             @media (max-width: 768px) {
@@ -566,366 +593,274 @@ def upload_file():
 
 def show_esrgan_results(original_filename, esrgan_filename, original_size_mb):
     """Show Real-ESRGAN results with option to apply GFPGAN"""
-    return f'''
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Super Resolution Complete</title>
-        <style>
-            * {{
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }}
-
-            body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-                color: #333;
-                padding: 20px;
-            }}
-
-            .container {{
-                max-width: 1400px;
-                margin: 0 auto;
-            }}
-
-            .header {{
-                text-align: center;
-                margin-bottom: 30px;
-                color: white;
-            }}
-
-            .header h1 {{
-                font-size: 2.5em;
-                margin-bottom: 10px;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            }}
-
-            .success-badge {{
-                background: linear-gradient(135deg, #56ab2f, #a8e6cf);
-                color: white;
-                padding: 10px 30px;
-                border-radius: 50px;
-                display: inline-block;
-                margin-bottom: 20px;
-                font-weight: 600;
-                font-size: 1.1em;
-                box-shadow: 0 5px 15px rgba(86, 171, 47, 0.3);
-            }}
-
-            .results-container {{
-                background: rgba(255, 255, 255, 0.95);
-                border-radius: 20px;
-                padding: 40px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                backdrop-filter: blur(10px);
-            }}
-
-            .comparison {{
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 40px;
-                margin-bottom: 40px;
-            }}
-
-            .image-section {{
-                text-align: center;
-            }}
-
-            .image-section h3 {{
-                font-size: 1.5em;
-                margin-bottom: 20px;
-                color: #555;
-            }}
-
-            .image-container {{
-                position: relative;
-                border-radius: 15px;
-                overflow: hidden;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-                transition: transform 0.3s ease;
-            }}
-
-            .image-container:hover {{
-                transform: translateY(-5px);
-            }}
-
-            .comparison-image {{
-                width: 100%;
-                height: auto;
-                display: block;
-                border-radius: 15px;
-            }}
-
-            .image-overlay {{
-                position: absolute;
-                top: 10px;
-                right: 10px;
-                background: rgba(0,0,0,0.7);
-                color: white;
-                padding: 5px 10px;
-                border-radius: 15px;
-                font-size: 0.8em;
-            }}
-
-            .enhancement-option {{
-                background: #f8f9fa;
-                border-radius: 15px;
-                padding: 30px;
-                margin: 30px 0;
-                text-align: center;
-                border: 2px solid #e9ecef;
-                transition: all 0.3s ease;
-            }}
-
-            .enhancement-option:hover {{
-                border-color: #667eea;
-                transform: translateY(-2px);
-            }}
-
-            .option-title {{
-                font-size: 1.5em;
-                color: #333;
-                margin-bottom: 15px;
-                font-weight: 600;
-            }}
-
-            .option-description {{
-                color: #666;
-                margin-bottom: 25px;
-                font-size: 1.1em;
-                line-height: 1.6;
-            }}
-
-            .btn {{
-                padding: 15px 30px;
-                margin: 0 10px;
-                border: none;
-                border-radius: 50px;
-                font-size: 1.1em;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                text-decoration: none;
-                display: inline-block;
-            }}
-
-            .btn-primary {{
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                color: white;
-                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-            }}
-
-            .btn-secondary {{
-                background: #6c757d;
-                color: white;
-                box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
-            }}
-
-            .btn-success {{
-                background: linear-gradient(135deg, #56ab2f, #a8e6cf);
-                color: white;
-                box-shadow: 0 5px 15px rgba(86, 171, 47, 0.3);
-            }}
-
-            .btn-warning {{
-                background: linear-gradient(135deg, #f39c12, #f1c40f);
-                color: white;
-                box-shadow: 0 5px 15px rgba(243, 156, 18, 0.3);
-            }}
-
-            .btn:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            }}
-
-            .loading {{
-                display: none;
-                text-align: center;
-                margin: 30px 0;
-            }}
-
-            .spinner {{
-                border: 4px solid #f3f3f3;
-                border-top: 4px solid #667eea;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                animation: spin 1s linear infinite;
-                margin: 0 auto 20px;
-            }}
-
-            @keyframes spin {{
-                0% {{ transform: rotate(0deg); }}
-                100% {{ transform: rotate(360deg); }}
-            }}
-
-            .progress-bar {{
-                width: 100%;
-                height: 8px;
-                background: #e0e0e0;
-                border-radius: 4px;
-                overflow: hidden;
-                margin: 20px 0;
-            }}
-
-            .progress-fill {{
-                height: 100%;
-                background: linear-gradient(90deg, #f39c12, #f1c40f);
-                width: 0%;
-                transition: width 0.3s ease;
-                border-radius: 4px;
-            }}
-
-            @media (max-width: 768px) {{
-                .comparison {{
-                    grid-template-columns: 1fr;
-                    gap: 30px;
-                }}
-                
-                .container {{
-                    padding: 10px;
-                }}
-                
-                .results-container {{
-                    padding: 20px;
-                }}
-                
-                .header h1 {{
-                    font-size: 2em;
-                }}
-                
-                .btn {{
-                    padding: 12px 25px;
-                    margin: 5px;
-                    display: block;
-                    margin-bottom: 10px;
-                }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div class="success-badge">🔍 Stage 1 Complete!</div>
-                <h1>Super Resolution Applied</h1>
-            </div>
-
-            <div class="results-container">
-                <div class="comparison">
-                    <div class="image-section">
-                        <h3>📷 Original Photo</h3>
-                        <div class="image-container">
-                            <img src="/static/inputs/{original_filename}" class="comparison-image" alt="Original">
-                            <div class="image-overlay">Original</div>
-                        </div>
-                    </div>
-                    <div class="image-section">
-                        <h3>🔍 Super Resolution (4x)</h3>
-                        <div class="image-container">
-                            <img src="/static/outputs/{esrgan_filename}" class="comparison-image" alt="Enhanced">
-                            <div class="image-overlay">Real-ESRGAN</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="enhancement-option">
-                    <div class="option-title">👤 Optional: Face Enhancement</div>
-                    <div class="option-description">
-                        Your image has been enhanced with super resolution! For photos with faces, you can apply GFPGAN 
-                        for additional face restoration and enhancement. This will take a few more minutes but can significantly 
-                        improve portrait photos.
-                    </div>
-                    <button onclick="applyGFPGAN('{esrgan_filename}')" class="btn btn-warning" id="gfpganBtn">
-                        ✨ Apply Face Enhancement (GFPGAN)
-                    </button>
-                    <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
-                        Recommended for: Portrait photos, family pictures, historical photos with people
-                    </p>
-                </div>
-
-                <div class="loading" id="gfpganLoading">
-                    <div class="spinner"></div>
-                    <h3>Applying GFPGAN Face Enhancement...</h3>
-                    <p>This may take a few minutes for high-resolution images</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="gfpganProgress"></div>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-top: 30px;">
-                    <a href="/download/{esrgan_filename}" class="btn btn-success">💾 Download Current Result</a>
-                    <a href="/" class="btn btn-primary">🔄 Process Another Photo</a>
-                    <a href="/" class="btn btn-secondary">🏠 Go to Home</a>
-                </div>
-            </div>
+    
+    return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Resolution Complete</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }}
+        .container {{ max-width: 1400px; margin: 0 auto; }}
+        .header {{ text-align: center; margin-bottom: 30px; color: white; }}
+        .header h1 {{ font-size: 2.5em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }}
+        .success-badge {{
+            background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+            color: white;
+            padding: 10px 30px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            box-shadow: 0 5px 15px rgba(86, 171, 47, 0.3);
+        }}
+        .results-container {{
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }}
+        .comparison {{ display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }}
+        .image-section {{ text-align: center; }}
+        .image-section h3 {{ font-size: 1.5em; margin-bottom: 20px; color: #555; }}
+        .image-container {{
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }}
+        .image-container:hover {{ transform: translateY(-5px); }}
+        .comparison-image {{ width: 100%; height: auto; display: block; border-radius: 15px; }}
+        .image-overlay {{
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0,0,0,0.7); color: white;
+            padding: 5px 10px; border-radius: 15px; font-size: 0.8em;
+        }}
+        .enhancement-option {{
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }}
+        .enhancement-option:hover {{ border-color: #667eea; transform: translateY(-2px); }}
+        .option-title {{ font-size: 1.5em; color: #333; margin-bottom: 15px; font-weight: 600; }}
+        .option-description {{ color: #666; margin-bottom: 25px; font-size: 1.1em; line-height: 1.6; }}
+        .btn {{
+            padding: 15px 30px; margin: 0 10px; border: none;
+            border-radius: 50px; font-size: 1.1em; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease;
+            text-decoration: none; display: inline-block;
+        }}
+        .btn-primary {{ background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3); }}
+        .btn-secondary {{ background: #6c757d; color: white; box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3); }}
+        .btn-success {{ background: linear-gradient(135deg, #56ab2f, #a8e6cf); color: white; box-shadow: 0 5px 15px rgba(86, 171, 47, 0.3); }}
+        .btn-warning {{ background: linear-gradient(135deg, #f39c12, #f1c40f); color: white; box-shadow: 0 5px 15px rgba(243, 156, 18, 0.3); }}
+        .btn:hover {{ transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.2); }}
+        .btn:disabled {{ opacity: 0.6; cursor: not-allowed; transform: none; }}
+        .loading {{ display: none; text-align: center; margin: 30px 0; }}
+        .spinner {{
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #f39c12;
+            border-radius: 50%;
+            width: 60px; height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }}
+        @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
+        .progress-bar {{ width: 100%; height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; margin: 20px 0; }}
+        .progress-fill {{ height: 100%; background: linear-gradient(90deg, #f39c12, #f1c40f); width: 0%; transition: width 0.5s ease; border-radius: 5px; }}
+        .progress-text {{ color: #666; margin-top: 10px; font-size: 0.9em; }}
+        @media (max-width: 768px) {{
+            .comparison {{ grid-template-columns: 1fr; gap: 30px; }}
+            .container {{ padding: 10px; }}
+            .results-container {{ padding: 20px; }}
+            .header h1 {{ font-size: 2em; }}
+            .btn {{ padding: 12px 25px; margin: 5px; display: block; margin-bottom: 10px; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-badge">🔍 Stage 1 Complete!</div>
+            <h1>Super Resolution Applied</h1>
         </div>
 
-        <script>
-            function applyGFPGAN(esrganFilename) {{
-                const gfpganBtn = document.getElementById('gfpganBtn');
-                const gfpganLoading = document.getElementById('gfpganLoading');
-                const gfpganProgress = document.getElementById('gfpganProgress');
+        <div class="results-container">
+            <div class="comparison" id="comparisonSection">
+                <div class="image-section">
+                    <h3>📷 Original Photo</h3>
+                    <div class="image-container">
+                        <img src="/static/inputs/{original_filename}" class="comparison-image" alt="Original">
+                        <div class="image-overlay">Original</div>
+                    </div>
+                </div>
+                <div class="image-section">
+                    <h3>🔍 Super Resolution (4x)</h3>
+                    <div class="image-container">
+                        <img src="/static/outputs/{esrgan_filename}" class="comparison-image" alt="Enhanced">
+                        <div class="image-overlay">Real-ESRGAN</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="enhancement-option" id="enhancementOption">
+                <div class="option-title">👤 Optional: Face Enhancement</div>
+                <div class="option-description">
+                    Your image has been enhanced with super resolution! For photos with faces, you can apply GFPGAN 
+                    for additional face restoration and enhancement. This will take a few more minutes but can significantly 
+                    improve portrait photos.
+                </div>
                 
-                // Hide button and show loading
-                gfpganBtn.style.display = 'none';
-                gfpganLoading.style.display = 'block';
+                <form id="gfpganForm" method="POST" action="/apply_gfpgan">
+                    <input type="hidden" name="esrgan_filename" value="{esrgan_filename}">
+                    <button type="submit" class="btn btn-warning" id="gfpganBtn">
+                        ✨ Apply Face Enhancement (GFPGAN)
+                    </button>
+                </form>
                 
-                // Simulate progress
-                let progress = 0;
-                const progressInterval = setInterval(() => {{
-                    progress += Math.random() * 10;
-                    if (progress > 85) progress = 85;
-                    gfpganProgress.style.width = progress + '%';
-                }}, 800);
+                <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                    Recommended for: Portrait photos, family pictures, historical photos with people
+                </p>
+            </div>
+
+            <div class="loading" id="gfpganLoading">
+                <div class="spinner"></div>
+                <h3 style="color: #f39c12; margin-bottom: 10px;">Applying GFPGAN Face Enhancement...</h3>
+                <p style="color: #666; margin-bottom: 20px;">Processing high-resolution facial features</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="gfpganProgress"></div>
+                </div>
+                <div class="progress-text" id="progressText">Initializing GFPGAN model...</div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;" id="actionButtons">
+                <a href="/download/{esrgan_filename}" class="btn btn-success">💾 Download Current Result</a>
+                <a href="/" class="btn btn-primary">🔄 Process Another Photo</a>
+                <a href="/" class="btn btn-secondary">🏠 Go to Home</a>
+            </div>
+        </div>
+    </div>
+    
+    <script type="text/javascript">
+        document.getElementById('gfpganForm').onsubmit = function(e) {{
+            e.preventDefault();
+            console.log('[Frontend] GFPGAN form submitted');
+            
+            // Disable button
+            const btn = document.getElementById('gfpganBtn');
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+            
+            // Show loading, hide other sections
+            document.getElementById('enhancementOption').style.display = 'none';
+            document.getElementById('actionButtons').style.display = 'none';
+            document.getElementById('gfpganLoading').style.display = 'block';
+            
+            // Progress simulation with messages
+            let progress = 0;
+            const progressBar = document.getElementById('gfpganProgress');
+            const progressText = document.getElementById('progressText');
+            const messages = [
+                'Initializing GFPGAN model...',
+                'Loading face detection...',
+                'Processing facial features...',
+                'Enhancing face quality...',
+                'Applying restoration...',
+                'Finalizing enhancements...',
+                'Almost done...'
+            ];
+            let msgIndex = 0;
+            
+            const interval = setInterval(function() {{
+                progress += Math.random() * 8;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = progress + '%';
                 
-                // Call GFPGAN endpoint
-                fetch('/apply_gfpgan', {{
-                    method: 'POST',
-                    headers: {{
-                        'Content-Type': 'application/json',
-                    }},
-                    body: JSON.stringify({{'esrgan_filename': esrganFilename}})
-                }}).then(response => {{
-                    clearInterval(progressInterval);
-                    gfpganProgress.style.width = '100%';
-                    return response.text();
-                }}).then(html => {{
+                // Update message
+                if (progress > (msgIndex + 1) * 12 && msgIndex < messages.length - 1) {{
+                    msgIndex++;
+                    progressText.textContent = messages[msgIndex];
+                }}
+            }}, 1000);
+            
+            // Submit via FormData (works with both JSON and form encoding)
+            const formData = new FormData(this);
+            
+            fetch('/apply_gfpgan', {{
+                method: 'POST',
+                body: formData
+            }})
+            .then(response => {{
+                console.log('[Frontend] Response status:', response.status);
+                if (!response.ok) {{
+                    throw new Error('Server returned ' + response.status);
+                }}
+                return response.text();
+            }})
+            .then(html => {{
+                clearInterval(interval);
+                progressBar.style.width = '100%';
+                progressText.textContent = 'Complete!';
+                console.log('[Frontend] Success - updating page');
+                setTimeout(() => {{
                     document.body.innerHTML = html;
-                }}).catch(error => {{
-                    console.error('Error:', error);
-                    alert('GFPGAN processing failed. You can still download the super resolution result.');
-                    gfpganLoading.style.display = 'none';
-                    gfpganBtn.style.display = 'inline-block';
-                    clearInterval(progressInterval);
-                }});
-            }}
-        </script>
-    </body>
-    </html>
-    '''
+                }}, 500);
+            }})
+            .catch(err => {{
+                clearInterval(interval);
+                console.error('[Frontend] Error:', err);
+                alert('GFPGAN processing failed: ' + err.message + '\\n\\nPlease try again or download the current result.');
+                document.getElementById('enhancementOption').style.display = 'block';
+                document.getElementById('actionButtons').style.display = 'block';
+                document.getElementById('gfpganLoading').style.display = 'none';
+                btn.disabled = false;
+                btn.textContent = '✨ Apply Face Enhancement (GFPGAN)';
+            }});
+            
+            return false;
+        }};
+        
+        console.log('[Frontend] GFPGAN page loaded and ready');
+    </script>
+</body>
+</html>'''
 
 @app.route('/apply_gfpgan', methods=['POST'])
 def apply_gfpgan():
     """Apply GFPGAN to the already processed Real-ESRGAN image"""
-    data = request.get_json()
-    esrgan_filename = data.get('esrgan_filename')
+    # Handle both JSON and form data
+    if request.is_json:
+        data = request.get_json()
+        esrgan_filename = data.get('esrgan_filename')
+    else:
+        esrgan_filename = request.form.get('esrgan_filename')
     
     if not esrgan_filename:
-        return jsonify({{'error': 'No filename provided'}}), 400
+        print("[Flask] ERROR: No filename provided")
+        return jsonify({'error': 'No filename provided'}), 400
     
-    print(f"Applying GFPGAN to {{esrgan_filename}}...")
+    print(f"[Flask] Applying GFPGAN to {esrgan_filename}...")
     final_output_filename = process_with_gfpgan(esrgan_filename)
     
     if final_output_filename is None:
-        print("GFPGAN processing failed")
-        return jsonify({{'error': 'GFPGAN processing failed'}}), 500
+        print("[Flask] GFPGAN processing failed")
+        return jsonify({'error': 'GFPGAN processing timed out or failed. The background processor may not be running.'}), 500
     
-    print(f"GFPGAN processing completed: {{final_output_filename}}")
+    print(f"[Flask] GFPGAN processing completed: {final_output_filename}")
     
     # Extract original filename for display
     original_filename = esrgan_filename.replace("esrgan_", "")
